@@ -2,6 +2,7 @@ import json
 
 import rethinkdb as r
 from twisted.internet.defer import inlineCallbacks, Deferred, gatherResults
+from whiskers.rethink_ddp import rethink_to_ddp
 
 class PubSubManager:
     """
@@ -21,9 +22,8 @@ class PubSubManager:
         ready.callback(None)
         while (yield feed.fetch_next()):
             item = yield feed.next()
-            # print("Seen on table %s: %s" % (table, str(item)))
-            # self.write(b"<p>Seen on table %s: %s</p>" % (bytes(table, encoding="UTF-8"), bytes(json.dumps(item), "UTF-8")))
-            self.sendMessage(json.dumps(item).encode('utf8'))
+            ddp_message = rethink_to_ddp(table, item)
+            self.sendMessage(ddp_message.serialize(encoding='utf8'))
 
     @inlineCallbacks
     def notice_changes(self, conn, *tables):
@@ -34,15 +34,17 @@ class PubSubManager:
 
         # Wait for the feeds to become ready
         yield gatherResults(readies)
-        # yield gatherResults([self.table_write(conn, table) for table in tables])
-
-        # yield self.table_write(conn, 'a')
-        # yield r.table('a').insert({'kitten': 'furry'}).run(conn)
-
-        # for i in range(5):
-        #     yield sleep(5)
-        #     yield r.table('a').insert({'count': i, 'table': 'a'}).run(conn)
 
         # cancel.addErrback(lambda err: None)
         # cancel.cancel()
         # yield DeferredList(feeds)
+
+    @inlineCallbacks
+    def initial_data(self, conn, table):
+        cursor = yield r.table(table).run(conn)
+        while (yield cursor.fetch_next()):
+            item = yield cursor.next()
+            # item is the plain dict, so transform into changefeed format for rethink_to_ddp
+            item_dict = {"old_val": None, "new_val": item}
+            ddp_message = rethink_to_ddp(table, item_dict)
+            self.sendMessage(ddp_message.serialize(encoding="utf8"))

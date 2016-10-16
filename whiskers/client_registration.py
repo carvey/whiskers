@@ -23,9 +23,10 @@ class ClientRegistration:
             print("Registered client: %s" % client.proto.peer)
 
     def unregister_client(self, client_proto):
-        if client_proto in self.clients:
-            self.clients[client_proto].conn.close()
-            del self.clients[client_proto]
+        if hasattr(self, 'clients'):
+            if client_proto in self.clients:
+                self.clients[client_proto].conn.close()
+                del self.clients[client_proto]
 
             print("Unregistered client: %s" % client_proto)
 
@@ -35,4 +36,3 @@ class ClientRegistration:
 
         if isinstance(client.conn, Deferred):
             client.conn = yield client.conn
-            print("DB Connection Established for: %s" % client.proto.peer)

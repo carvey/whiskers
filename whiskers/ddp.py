@@ -1,5 +1,5 @@
 from PythonDDPClient.src.message import *
-from twisted.internet.defer import inlineCallbacks, Deferred
+from twisted.internet.defer import inlineCallbacks
 
 class DDPServer:
     """
@@ -64,5 +64,10 @@ class DDPServer:
         client = self.factory.clients[self]
 
         yield self.factory.connectionReady(self)
+
+        yield self.initial_data(client.conn, name)
+        ready = ReadyMessage(subs=name)
+        self.sendMessage(ready.serialize(encoding="utf8"))
+
         yield self.notice_changes(client.conn, name)
 
