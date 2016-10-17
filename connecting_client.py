@@ -17,8 +17,8 @@ class BroadcastClientProtocol(WebSocketClientProtocol):
     """
 
     def sendHello(self):
-        print("sending welcome message")
         connect_msg = ConnectionMessage(version='1', support=['1'])
+        print("SENT: %s" % connect_msg)
         self.sendMessage(connect_msg.serialize(encoding='utf8'))
 
         import time
@@ -26,8 +26,8 @@ class BroadcastClientProtocol(WebSocketClientProtocol):
         self.sub()
 
     def sub(self):
-        print("send sub request")
         sub_msg = SubMessage(id=2, name="kittens", params=[])
+        print("SENT: %s" % sub_msg)
         self.sendMessage(sub_msg.serialize(encoding="utf8"))
 
     def onOpen(self):
@@ -35,7 +35,7 @@ class BroadcastClientProtocol(WebSocketClientProtocol):
 
     def onMessage(self, payload, isBinary):
         if not isBinary:
-            print("TXT: {}".format(payload.decode('utf8')))
+            print("RECEIVED: {}".format(payload.decode('utf8')))
         else:
             print(payload)
 

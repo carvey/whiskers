@@ -1,3 +1,4 @@
-from whiskers.setup import run
+from whiskers.whiskers import Whiskers
+from whiskers import data
 
-run('whiskers_test', u'ws://127.0.0.1:9000')
+Whiskers.run('whiskers_test', u'ws://127.0.0.1:9000')

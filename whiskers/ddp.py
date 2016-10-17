@@ -66,7 +66,7 @@ class DDPServer:
         yield self.factory.connectionReady(self)
 
         yield self.initial_data(client.conn, name)
-        ready = ReadyMessage(subs=name)
+        ready = ReadyMessage(subs=[name, ])
         self.sendMessage(ready.serialize(encoding="utf8"))
 
         yield self.notice_changes(client.conn, name)

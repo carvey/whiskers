@@ -1,6 +1,6 @@
-from whiskers.data import db
+from whiskers.whiskers import Whiskers
 
-db.add_tables([
+Whiskers.add_tables([
     'a',
     'b',
     'kittens'

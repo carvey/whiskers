@@ -8,6 +8,5 @@ class ApplicationContext:
     def add(self, key, value):
         self.__dict__[key] = value
 
-    # def list_context(self):
 
 app = ApplicationContext()

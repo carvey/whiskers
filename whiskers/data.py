@@ -27,4 +27,3 @@ class DBManager:
         for name in names:
             self.add_table(name)
 
-db = DBManager()

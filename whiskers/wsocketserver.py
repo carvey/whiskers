@@ -1,7 +1,6 @@
 import sys
 
 from autobahn.twisted.websocket import WebSocketServerProtocol, WebSocketServerFactory
-from twisted.internet.defer import inlineCallbacks
 from twisted.python import log
 
 from PythonDDPClient.src.message import *
@@ -11,7 +10,17 @@ from whiskers.ddp import DDPServer
 
 log.startLogging(sys.stdout)
 
-class ServerProtocol(WebSocketServerProtocol, PubSubManager, DDPServer):
+class WebSocketServer(WebSocketServerProtocol, PubSubManager, DDPServer):
+
+    @staticmethod
+    def setup(host):
+        from autobahn.twisted.websocket import listenWS
+
+        factory = ServerFactory(host)
+        factory.protocol = WebSocketServer
+        factory.setProtocolOptions(autoPingInterval=15, autoPingTimeout=3)
+
+        listenWS(factory)
 
     def onConnect(self, request):
         # print("Client connecting: %s" % request.peer)

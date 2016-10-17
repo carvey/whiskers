@@ -1,6 +1,9 @@
 
 
 class Client:
+    """
+
+    """
 
     def __init__(self, proto):
         self.proto = proto
