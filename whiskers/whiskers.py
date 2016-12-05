@@ -27,8 +27,8 @@ class WhiskersServer():
             How to best dynamic servers to work together?
         :return:
         """
-        self.server_classes = [WsDDPServer, WebServer]
-        self.servers = []
+        # self.server_classes = [WsDDPServer, WebServer]
+        self.servers = [WsDDPServer(), WebServer()]
         self.options = CommandLineOptions()
 
         self.settings = ApplicationContext()
@@ -44,7 +44,7 @@ class WhiskersServer():
         self.gather_options()
 
         self.settings.add('name', name)
-        self.settings.add('host', host)
+        self.setup_parse_host(host)
 
         # import the settings file specified by the user
         settings_module = self.options.get("settings")
@@ -67,7 +67,7 @@ class WhiskersServer():
         connection_host = settings.db['host']
         connection_port = settings.db['port']
         yield self.setup_db_conn(name, connection_host, connection_port)
-        
+
 
     @inlineCallbacks
     def setup_db_conn(self, name, host, port):
@@ -101,14 +101,24 @@ class WhiskersServer():
         client_folder = os.path.join(project_home, 'client')
         self.settings.add('client_dir', client_folder)
 
+    def setup_parse_host(self, host):
+        port = 8000
 
-    def run(self, name, host=u"ws://127.0.0.1:9000"):
+        if ':' in host:
+            port = int(host.split(":")[-1])
+            host = host.replace(":%s" % port, "")
+
+        self.settings.add('host', host)
+        self.settings.add('port', port)
+
+
+    def run(self, name, host=u"127.0.0.1"):
         self.setup(name, host)
 
         log.startLogging(sys.stdout)
 
-        for server_cls in self.server_classes:
-            server = server_cls()
+        for server in self.servers:
+            # server = server_cls()
             server.setup(self.settings)
 
         reactor.run()

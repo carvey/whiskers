@@ -23,11 +23,18 @@ class WsDDPServer(WebSocketServerProtocol, PubSubManager, DDPServer):
         # register_client call will need the connection args setting
         self.connection_args = settings.connection_args
 
-        factory = ServerFactory(settings.host)
+        url = self.build_url(settings)
+        factory = DDPServerFactory(url)
         factory.protocol = WsDDPServer
         factory.setProtocolOptions(autoPingInterval=15, autoPingTimeout=3)
 
         listenWS(factory)
+
+    def build_url(self, settings):
+        host = settings.host
+        ddp_port = settings.ddp_port
+
+        return "ws://%s:%s" % (host, ddp_port)
 
     def onConnect(self, request):
         # print("Client connecting: %s" % request.peer)
@@ -74,7 +81,7 @@ class WsDDPServer(WebSocketServerProtocol, PubSubManager, DDPServer):
         # print("Websocket connection closed: %s" % reason)
         self.factory.unregister_client(self)
 
-class ServerFactory(WebSocketServerFactory, ClientRegistration):
+class DDPServerFactory(WebSocketServerFactory, ClientRegistration):
     pass
 
 
