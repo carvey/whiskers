@@ -1,17 +1,13 @@
 import sys
 
+from autobahn.twisted.resource import WebSocketResource
 from autobahn.twisted.websocket import WebSocketServerProtocol, WebSocketServerFactory
+from twisted.internet import reactor
 from twisted.python import log
-
-from whiskers.publications import PubSubManager
-from whiskers.context import app
-
 from twisted.web.server import Site
 from twisted.web.static import File
 
-from autobahn.twisted.resource import WebSocketResource
-
-from twisted.internet import reactor
+from whiskers.publications import PubSubManager
 
 log.startLogging(sys.stdout)
 

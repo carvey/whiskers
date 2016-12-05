@@ -1,5 +1,7 @@
-from PythonDDPClient.src.message import *
 from twisted.internet.defer import inlineCallbacks
+
+from PythonDDPClient.src.message import *
+
 
 class DDPServer:
     """

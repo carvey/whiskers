@@ -1,8 +1,8 @@
-import json
-
 import rethinkdb as r
 from twisted.internet.defer import inlineCallbacks, Deferred, gatherResults
+
 from whiskers.rethink_ddp import rethink_to_ddp
+
 
 class PubSubManager:
     """

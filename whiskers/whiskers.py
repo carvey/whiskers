@@ -1,6 +1,6 @@
 import importlib
-import sys
 import os
+import sys
 
 import rethinkdb as r
 from rethinkdb.errors import ReqlRuntimeError
@@ -8,13 +8,11 @@ from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 from twisted.python import log
 
-# from whiskers.context import app
+from whiskers.context import ApplicationContext
 from whiskers.data import DBManager
+from whiskers.options import CommandLineOptions
 from whiskers.ws_ddp_server import WsDDPServer
 from whiskers.ws_web_server import WebServer
-from whiskers.options import CommandLineOptions
-from whiskers.context import ApplicationContext
-
 
 r.set_loop_type('twisted')
 
@@ -48,18 +46,28 @@ class WhiskersServer():
         self.settings.add('name', name)
         self.settings.add('host', host)
 
+        # import the settings file specified by the user
         settings_module = self.options.get("settings")
         settings = importlib.import_module(settings_module)
 
+        # get a default project directory based on the location of the settings.py file
+        # and assume this is the top level dir of the project.
+        # This can be specified and overridden in the settings file
+        # use this assumption to import necessary files/dirs
         settings_path = os.path.abspath(settings_module)
         project_dir = os.path.dirname(settings_path)
         project_home = getattr(settings, 'project_home', project_dir)
         self.setup_project_files(project_home)
 
+        # add project_home to this whiskers instance settings context
+        self.settings.add('project_home', project_home)
+
+        # set up the db connection between this whiskers instance and rethink
+        # not associated with the client connection pool
         connection_host = settings.db['host']
         connection_port = settings.db['port']
         yield self.setup_db_conn(name, connection_host, connection_port)
-
+        
 
     @inlineCallbacks
     def setup_db_conn(self, name, host, port):
@@ -87,8 +95,6 @@ class WhiskersServer():
         conn.use(name)
 
     def setup_project_files(self, project_home):
-
-        self.settings.add('project_home', project_home)
 
         # TODO make this client stuff dynamic eventually
         # client folder will hold all types of files sent to the client

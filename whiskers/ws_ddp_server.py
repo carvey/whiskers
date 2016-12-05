@@ -5,8 +5,8 @@ from twisted.python import log
 
 from PythonDDPClient.src.message import *
 from whiskers.client_registration import ClientRegistration
-from whiskers.publications import PubSubManager
 from whiskers.ddp import DDPServer
+from whiskers.publications import PubSubManager
 
 log.startLogging(sys.stdout)
 

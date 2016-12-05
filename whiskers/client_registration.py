@@ -3,6 +3,7 @@ from twisted.internet.defer import inlineCallbacks, Deferred
 
 from whiskers.client import Client
 
+
 class ClientRegistration:
     """
     To be used along with any other class that needs to manage clients
