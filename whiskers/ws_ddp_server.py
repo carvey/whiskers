@@ -10,14 +10,21 @@ from whiskers.ddp import DDPServer
 
 log.startLogging(sys.stdout)
 
-class WebSocketServer(WebSocketServerProtocol, PubSubManager, DDPServer):
+class WsDDPServer(WebSocketServerProtocol, PubSubManager, DDPServer):
 
-    @staticmethod
-    def setup(host):
+    def setup(self, settings):
+        """
+        Setup
+        :param host:
+        :return:
+        """
         from autobahn.twisted.websocket import listenWS
 
-        factory = ServerFactory(host)
-        factory.protocol = WebSocketServer
+        # register_client call will need the connection args setting
+        self.connection_args = settings.connection_args
+
+        factory = ServerFactory(settings.host)
+        factory.protocol = WsDDPServer
         factory.setProtocolOptions(autoPingInterval=15, autoPingTimeout=3)
 
         listenWS(factory)
@@ -55,7 +62,7 @@ class WebSocketServer(WebSocketServerProtocol, PubSubManager, DDPServer):
             msg = payload.msg
 
             if msg == 'connect':
-                self.handle_connect(payload)
+                self.handle_connect(payload, connection_args=self.connection_args)
 
             elif msg == 'sub':
                 self.handle_sub(payload)

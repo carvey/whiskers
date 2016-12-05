@@ -1,14 +1,13 @@
 import rethinkdb as r
 from twisted.internet.defer import inlineCallbacks, Deferred
 
-from whiskers.context import app
 from whiskers.client import Client
 
 class ClientRegistration:
     """
     To be used along with any other class that needs to manage clients
     """
-    def register_client(self, client_proto):
+    def register_client(self, client_proto, connection_args):
         client = Client(client_proto)
         client.proto = client_proto
 
@@ -16,7 +15,7 @@ class ClientRegistration:
             self.clients = {}
 
         if client_proto not in self.clients:
-            conn = r.connect(**app.connection_args)
+            conn = r.connect(**connection_args)
             client.conn = conn
             self.clients[client_proto] = client
 

@@ -6,8 +6,9 @@ class DDPServer:
     Class to hold all logic related to handling DDP messages in Whiskers
     """
 
+
     @inlineCallbacks
-    def handle_connect(self, message):
+    def handle_connect(self, message, *args, **kwargs):
         """
         handles the DDP 'connect' message
 
@@ -32,7 +33,7 @@ class DDPServer:
         :return:
         """
 
-        self.factory.register_client(self)
+        self.factory.register_client(self, *args, **kwargs)
         yield self.factory.connectionReady(self)
 
         welcome = WelcomeMessage(server_id=0)

@@ -6,7 +6,7 @@ from PythonDDPClient.src.message import *
 
 def rethink_to_ddp(table, message):
     """
-    Attempt to parse rethink changfeed and generate the appropriate ddp message with the following rules:
+    Parse rethink changfeed and generate the appropriate ddp message with the following rules:
         - new_val but no old_val -> (ddp) added
         - new_val and old_val -> (ddp) changed
         - old_val but no new_val -> (ddp) removed

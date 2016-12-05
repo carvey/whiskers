@@ -1,5 +1,6 @@
 import importlib
 import sys
+import os
 
 import rethinkdb as r
 from rethinkdb.errors import ReqlRuntimeError
@@ -7,9 +8,13 @@ from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 from twisted.python import log
 
-from whiskers.context import app
+# from whiskers.context import app
 from whiskers.data import DBManager
-from whiskers.wsocketserver import WebSocketServer
+from whiskers.ws_ddp_server import WsDDPServer
+from whiskers.ws_web_server import WebServer
+from whiskers.options import CommandLineOptions
+from whiskers.context import ApplicationContext
+
 
 r.set_loop_type('twisted')
 
@@ -24,22 +29,45 @@ class WhiskersServer():
             How to best dynamic servers to work together?
         :return:
         """
-        self.servers = [WebSocketServer()]
-        self.db = DBManager()
+        self.server_classes = [WsDDPServer, WebServer]
+        self.servers = []
+        self.options = CommandLineOptions()
 
+        self.settings = ApplicationContext()
+
+        self.db = DBManager()
         self.db_conn = None
+
+        self.project_path = None
 
 
     @inlineCallbacks
-    def setup(self, name):
+    def setup(self, name, host):
+        self.gather_options()
 
-        settings = importlib.import_module('settings')
+        self.settings.add('name', name)
+        self.settings.add('host', host)
+
+        settings_module = self.options.get("settings")
+        settings = importlib.import_module(settings_module)
+
+        settings_path = os.path.abspath(settings_module)
+        project_dir = os.path.dirname(settings_path)
+        project_home = getattr(settings, 'project_home', project_dir)
+        self.setup_project_files(project_home)
+
         connection_host = settings.db['host']
         connection_port = settings.db['port']
+        yield self.setup_db_conn(name, connection_host, connection_port)
 
+
+    @inlineCallbacks
+    def setup_db_conn(self, name, host, port):
         # connection_args will hold the key, value pairs that all db connections will use. If changes are necessary, they
         # can be made on a per use basis
-        connection_args = {'host': connection_host, 'port': connection_port}
+        connection_args = {'host': host, 'port': port}
+        connection_args.update({'db': name})
+        self.settings.add('connection_args', connection_args)
 
         conn = r.connect(**connection_args)
         conn = yield conn
@@ -57,20 +85,40 @@ class WhiskersServer():
             pass
 
         conn.use(name)
-        connection_args.update({'db': name})
-        # connection_args is set on 'app' to avoid circular imports with client_registration and this file
-        app.add('connection_args', connection_args)
+
+    def setup_project_files(self, project_home):
+
+        self.settings.add('project_home', project_home)
+
+        # TODO make this client stuff dynamic eventually
+        # client folder will hold all types of files sent to the client
+        client_folder = os.path.join(project_home, 'client')
+        self.settings.add('client_dir', client_folder)
 
 
     def run(self, name, host=u"ws://127.0.0.1:9000"):
-        self.setup(name)
+        self.setup(name, host)
 
         log.startLogging(sys.stdout)
 
-        for server in self.servers:
-            server.setup(host)
+        for server_cls in self.server_classes:
+            server = server_cls()
+            server.setup(self.settings)
 
         reactor.run()
+
+    def gather_options(self):
+        """
+        These will setup the default options and default values that whiskers will look for to use.
+        Current options are:
+            - settings (-s or --settings)
+        """
+        self.options.parser.add_argument("--settings",
+                                         type=str,
+                                         default="settings.py",
+                                         help="Specifies the settings file for whiskers to use"
+                                         )
+
 
     def publish(self, name):
         """
@@ -82,7 +130,10 @@ class WhiskersServer():
 
     def add_tables(self, table_list):
         """
-        This method hides the DB manager from the user,
+        This method hides the DB manager from the user.
+
+        Still need to get *args, **kwargs passed through
+
         :param table_list:
         :return:
         """
