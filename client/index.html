@@ -8,9 +8,9 @@
             ellog = document.getElementById('log');
             var wsuri;
             if (window.location.protocol === "file:") {
-               wsuri = "ws://127.0.0.1:8001/ws?a=23&foo=bar";
+               wsuri = "ws://127.0.0.1:8030/";
             } else {
-               wsuri = "ws://" + window.location.hostname + ":8001/ws?a=23&foo=bar";
+               wsuri = "ws://" + window.location.hostname + ":8030";
             }
             if ("WebSocket" in window) {
                sock = new WebSocket(wsuri);
@@ -28,7 +28,7 @@
                   sock = null;
                }
                sock.onmessage = function(e) {
-                  log("Got echo: " + e.data);
+                  log("Got message: " + e.data);
                }
             }
          };
@@ -49,12 +49,14 @@
             ellog.scrollTop = ellog.scrollHeight;
          };
       </script>
+
+      <!--<script src="test.js"></script>-->
    </head>
    <body>
-      <h1>Autobahn WebSocket Echo Test</h1>
+      <h1>WebSocket Log Test</h1>
       <noscript>You must enable JavaScript</noscript>
       <form>
-         <p>Message: <input id="message" type="text" size="50" maxlength="50" value="Hello, world!"></p>
+         <p>Message: <input id="message" type="text" size="100" maxlength="100" value="Hello, world!"></p>
          <p>Batchsize:
             <select id="batch">
                <option value="1">1</option>

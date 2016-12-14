@@ -111,6 +111,9 @@ class WhiskersServer():
         self.settings.add('host', host)
         self.settings.add('port', port)
 
+        # could change later
+        self.settings.add("ddp_port", 8030)
+
 
     def run(self, name, host=u"127.0.0.1"):
         self.setup(name, host)

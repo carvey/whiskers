@@ -12,6 +12,8 @@ log.startLogging(sys.stdout)
 
 class WsDDPServer(WebSocketServerProtocol, PubSubManager, DDPServer):
 
+    connection_args = None
+
     def setup(self, settings):
         """
         Setup
@@ -21,7 +23,7 @@ class WsDDPServer(WebSocketServerProtocol, PubSubManager, DDPServer):
         from autobahn.twisted.websocket import listenWS
 
         # register_client call will need the connection args setting
-        self.connection_args = settings.connection_args
+        WsDDPServer.connection_args = settings.connection_args
 
         url = self.build_url(settings)
         factory = DDPServerFactory(url)
@@ -69,7 +71,7 @@ class WsDDPServer(WebSocketServerProtocol, PubSubManager, DDPServer):
             msg = payload.msg
 
             if msg == 'connect':
-                self.handle_connect(payload, connection_args=self.connection_args)
+                self.handle_connect(payload, connection_args=WsDDPServer.connection_args)
 
             elif msg == 'sub':
                 self.handle_sub(payload)

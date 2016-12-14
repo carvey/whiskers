@@ -73,4 +73,3 @@ class DDPServer:
         self.sendMessage(ready.serialize(encoding="utf8"))
 
         yield self.notice_changes(client.conn, name)
-

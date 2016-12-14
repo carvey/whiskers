@@ -1,0 +1,22 @@
+{
+  "name": "whiskers",
+  "version": "1.0.0",
+  "description": "Python Web Framework modeled after Meteor",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/carvey/whiskers.git"
+  },
+  "author": "Charles Arvey",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/carvey/whiskers/issues"
+  },
+  "homepage": "https://github.com/carvey/whiskers#readme",
+  "dependencies": {
+    "ddp-client": "^0.1.2"
+  }
+}
