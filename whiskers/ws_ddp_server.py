@@ -1,42 +1,18 @@
 import sys
 
+import rethinkdb as r
 from autobahn.twisted.websocket import WebSocketServerProtocol, WebSocketServerFactory
-from twisted.python import log
+from autobahn.twisted.websocket import listenWS
+from twisted.internet.defer import inlineCallbacks, Deferred
 
 from PythonDDPClient.src.message import *
-from whiskers.client_registration import ClientRegistration
-from whiskers.ddp import DDPServer
+from whiskers.client import Client
+from whiskers.ddp import DDPHandlers
 from whiskers.publications import PubSubManager
 
-log.startLogging(sys.stdout)
+# log.startLogging(sys.stdout)
 
-class WsDDPServer(WebSocketServerProtocol, PubSubManager, DDPServer):
-
-    connection_args = None
-
-    def setup(self, settings):
-        """
-        Setup
-        :param host:
-        :return:
-        """
-        from autobahn.twisted.websocket import listenWS
-
-        # register_client call will need the connection args setting
-        WsDDPServer.connection_args = settings.connection_args
-
-        url = self.build_url(settings)
-        factory = DDPServerFactory(url)
-        factory.protocol = WsDDPServer
-        factory.setProtocolOptions(autoPingInterval=15, autoPingTimeout=3)
-
-        listenWS(factory)
-
-    def build_url(self, settings):
-        host = settings.host
-        ddp_port = settings.ddp_port
-
-        return "ws://%s:%s" % (host, ddp_port)
+class DDPProtocol(WebSocketServerProtocol, PubSubManager, DDPHandlers):
 
     def onConnect(self, request):
         # print("Client connecting: %s" % request.peer)
@@ -58,10 +34,6 @@ class WsDDPServer(WebSocketServerProtocol, PubSubManager, DDPServer):
         :param isBinary:
         :return:
         """
-        # if isBinary:
-        #     print("BIN: %s bytes" % len(payload))
-        # else:
-        #     print("TEXT: %s" % payload.decode("UTF-8"))
 
         # detect message type and offload to the appropriate message handlers
         payload = Message.resolve_message(payload.decode('utf8'))
@@ -71,19 +43,64 @@ class WsDDPServer(WebSocketServerProtocol, PubSubManager, DDPServer):
             msg = payload.msg
 
             if msg == 'connect':
-                self.handle_connect(payload, connection_args=WsDDPServer.connection_args)
+                self.handle_connect(payload, db_connection_args=DDPProtocol.db_connection_args)
 
             elif msg == 'sub':
                 self.handle_sub(payload)
 
         print("TXT: %s" % payload)
 
-
     def onClose(self, wasClean, code, reason):
         # print("Websocket connection closed: %s" % reason)
         self.factory.unregister_client(self)
 
-class DDPServerFactory(WebSocketServerFactory, ClientRegistration):
-    pass
+
+class DDPServerFactory(WebSocketServerFactory):
+
+    def __init__(self, settings, *args, **kwargs):
+        url = self.build_url(settings)
+        super(DDPServerFactory, self).__init__(url, *args, **kwargs)
+
+        self.protocol = DDPProtocol
+        self.setProtocolOptions(autoPingInterval=15, autoPingTimeout=3)
+
+    # @inlineCallbacks
+    def listen(self):
+        listenWS(self)
+
+    def build_url(self, settings):
+        host = "localhost"
+        port = settings.port
+
+        return "ws://%s:%s" % (host, port)
+
+    def register_client(self, client_proto, db_connection_args):
+        client = Client(client_proto)
+        client.proto = client_proto
+
+        if not hasattr(self, 'clients'):
+            self.clients = {}
+
+        if client_proto not in self.clients:
+            conn = r.connect(**db_connection_args)
+            client.conn = conn
+            self.clients[client_proto] = client
+
+            print("Registered client: %s" % client.proto.peer)
+
+    def unregister_client(self, client_proto):
+        if hasattr(self, 'clients'):
+            if client_proto in self.clients:
+                self.clients[client_proto].conn.close()
+                del self.clients[client_proto]
+
+            print("Unregistered client: %s" % client_proto)
+
+    @inlineCallbacks
+    def connectionReady(self, client_proto):
+        client = self.clients[client_proto]
+
+        if isinstance(client.conn, Deferred):
+            client.conn = yield client.conn
 
 

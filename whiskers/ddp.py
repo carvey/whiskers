@@ -3,7 +3,7 @@ from twisted.internet.defer import inlineCallbacks
 from PythonDDPClient.src.message import *
 
 
-class DDPServer:
+class DDPHandlers:
     """
     Class to hold all logic related to handling DDP messages in Whiskers
     """

@@ -1,4 +1,5 @@
-from whiskers.whiskers import Whiskers
+from whiskers.whiskers import DDPServer
 
+server = DDPServer()
 
-Whiskers.run('whiskers_test', '127.0.0.1')
+server.run()

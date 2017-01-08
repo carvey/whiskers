@@ -50,7 +50,6 @@ def rethink_to_ddp(table, message):
         if 'id' in message['old_val']:
             del message['old_val']['id']
 
-
         if 'id' in message['new_val']:
             del message['new_val']['id']
 

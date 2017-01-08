@@ -7,6 +7,3 @@ class ApplicationContext:
 
     def add(self, key, value):
         self.__dict__[key] = value
-
-
-app = ApplicationContext()
