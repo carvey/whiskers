@@ -23,7 +23,7 @@ class PubSubManager:
         while (yield feed.fetch_next()):
             item = yield feed.next()
             ddp_message = rethink_to_ddp(table, item)
-            self.sendMessage(ddp_message.serialize(encoding='utf8'))
+            self.sendMessage(ddp_message.serialize())
 
     @inlineCallbacks
     def notice_changes(self, conn, *tables):
@@ -47,4 +47,4 @@ class PubSubManager:
             # item is the plain dict, so transform into changefeed format for rethink_to_ddp
             item_dict = {"old_val": None, "new_val": item}
             ddp_message = rethink_to_ddp(table, item_dict)
-            self.sendMessage(ddp_message.serialize(encoding="utf8"))
+            self.sendMessage(ddp_message.serialize())

@@ -38,11 +38,11 @@ class DDPHandlers:
         yield self.factory.connectionReady(self)
 
         welcome = WelcomeMessage(server_id=0)
-        welcome_serialized = welcome.serialize(encoding='utf8')
+        welcome_serialized = welcome.serialize()
         self.sendMessage(welcome_serialized)
 
         connected = ConnectedMessage(session="0")
-        connected_serialized = connected.serialize(encoding='utf8')
+        connected_serialized = connected.serialize()
         self.sendMessage(connected_serialized)
 
     @inlineCallbacks
@@ -69,12 +69,12 @@ class DDPHandlers:
         if message.name not in self.factory.pubs:
             nosub = NosubMessage(id=message.id,
                                  error="This server is not publishing the table: %s" % message.name)
-            self.sendMessage(nosub.serialize(encoding="utf8"))
+            self.sendMessage(nosub.serialize())
             return
 
         yield self.initial_data(client.conn, message.name)
         ready = ReadyMessage(subs=[message.name, ])
-        self.sendMessage(ready.serialize(encoding="utf8"))
+        self.sendMessage(ready.serialize())
 
         yield self.notice_changes(client.conn, message.name)
 
@@ -94,4 +94,4 @@ class DDPHandlers:
         result_msg = ResultMessage(id=message.id, result=result)
         print("---SENT---: %s" % result_msg)
 
-        self.sendMessage(result_msg.serialize(encoding="utf8"))
+        self.sendMessage(result_msg.serialize())
