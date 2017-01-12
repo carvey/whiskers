@@ -37,18 +37,21 @@ class DDPProtocol(WebSocketServerProtocol, PubSubManager, DDPHandlers):
 
         # detect message type and offload to the appropriate message handlers
         payload = Message.resolve_message(payload.decode('utf8'))
+        print("---RECEIVED---: %s" % payload)
 
         # if there is a msg present, determine the type
         if hasattr(payload, "msg"):
             msg = payload.msg
 
             if msg == 'connect':
-                self.handle_connect(payload, db_connection_args=DDPProtocol.db_connection_args)
+                connection_args = self.factory.settings.db_connection_args
+                self.handle_connect(payload, db_connection_args=connection_args)
 
             elif msg == 'sub':
                 self.handle_sub(payload)
 
-        print("TXT: %s" % payload)
+            elif msg == 'method':
+                self.handle_method(payload)
 
     def onClose(self, wasClean, code, reason):
         # print("Websocket connection closed: %s" % reason)
@@ -57,22 +60,30 @@ class DDPProtocol(WebSocketServerProtocol, PubSubManager, DDPHandlers):
 
 class DDPServerFactory(WebSocketServerFactory):
 
-    def __init__(self, settings, *args, **kwargs):
-        url = self.build_url(settings)
+    def __init__(self, settings, methods, *args, **kwargs):
+        self.settings = settings
+
+        url = self.build_url()
         super(DDPServerFactory, self).__init__(url, *args, **kwargs)
 
         self.protocol = DDPProtocol
         self.setProtocolOptions(autoPingInterval=15, autoPingTimeout=3)
 
-    # @inlineCallbacks
+        self.methods = {}
+        self.pubs = []
+
     def listen(self):
         listenWS(self)
 
-    def build_url(self, settings):
+    def build_url(self):
         host = "localhost"
-        port = settings.port
+        port = self.settings.port
 
         return "ws://%s:%s" % (host, port)
+
+    def call(self, method, params):
+        func = self.methods[method]
+        return func(*params)
 
     def register_client(self, client_proto, db_connection_args):
         client = Client(client_proto)

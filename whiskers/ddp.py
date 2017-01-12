@@ -8,7 +8,6 @@ class DDPHandlers:
     Class to hold all logic related to handling DDP messages in Whiskers
     """
 
-
     @inlineCallbacks
     def handle_connect(self, message, *args, **kwargs):
         """
@@ -59,8 +58,6 @@ class DDPHandlers:
         :param message: the parsed SubMessage Object
         :return:
         """
-        id = message.id
-        name = message.name
 
         # still need to send all initial data
         # subscribe to new changes
@@ -68,8 +65,33 @@ class DDPHandlers:
 
         yield self.factory.connectionReady(self)
 
-        yield self.initial_data(client.conn, name)
-        ready = ReadyMessage(subs=[name, ])
+        # check to see if the table is being published
+        if message.name not in self.factory.pubs:
+            nosub = NosubMessage(id=message.id,
+                                 error="This server is not publishing the table: %s" % message.name)
+            self.sendMessage(nosub.serialize(encoding="utf8"))
+            return
+
+        yield self.initial_data(client.conn, message.name)
+        ready = ReadyMessage(subs=[message.name, ])
         self.sendMessage(ready.serialize(encoding="utf8"))
 
-        yield self.notice_changes(client.conn, name)
+        yield self.notice_changes(client.conn, message.name)
+
+
+    def handle_method(self, message):
+        """
+        method (client -> server):
+            method: string (method name)
+            params: optional array of EJSON items (parameters to the method)
+            id: string (an arbitrary client-determined identifier for this method call)
+            randomSeed: optional JSON value (an arbitrary client-determined seed for pseudo-random generators)
+        :param message:
+        :return:
+        """
+
+        result = self.factory.call(message.method, message.params)
+        result_msg = ResultMessage(id=message.id, result=result)
+        print("---SENT---: %s" % result_msg)
+
+        self.sendMessage(result_msg.serialize(encoding="utf8"))

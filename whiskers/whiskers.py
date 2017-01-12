@@ -22,6 +22,7 @@ class DDPServer():
             How to best dynamic servers to work together?
         :return:
         """
+        self.methods = {}
 
         # settings object for this instance
         self.settings = ApplicationContext()
@@ -40,23 +41,30 @@ class DDPServer():
 
         self.db = RethinkBasic(self.settings)
 
-        self.factory = DDPServerFactory(self.settings)
+        self.factory = DDPServerFactory(self.settings, self.methods)
 
     # @inlineCallbacks
     def run(self):
         log.startLogging(sys.stdout)
 
         self.db.db_connect(self.settings)
+        self.factory.methods = self.methods
         self.factory.listen()
+
         reactor.run()
 
-    def publish(self, name):
+    def publish(self, collections):
         """
         All data that users can access should only be accessible if published here first.
-        :param name:
+        :param collections: Can be a string or list of the collections to publish
         :return:
         """
-        pass
+        if isinstance(collections, list):
+            for collection in collections:
+                self.factory.pubs.append(collection)
+
+        else:
+            self.factory.pubs.append(collections)
 
     def add_tables(self, table_list):
         """
@@ -69,10 +77,3 @@ class DDPServer():
         """
         self.db.add_tables(table_list)
 
-    def methods(self, methods):
-        """
-        this should define RPC methods
-        :param methods:
-        :return:
-        """
-        pass

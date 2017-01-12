@@ -38,12 +38,12 @@ def rethink_to_ddp(table, message):
             if old_val[key] != val:
                 changed_fields[key] = val
 
-        # need some way to remove fields.. How this look in DDP??
-        # for key, val in old_val.items():
-        #     if key not in new_val:
-        #
+        cleared = []
+        for key, val in old_val.items():
+            if key not in new_val:
+                cleared.append(key)
 
-        changed = ChangedMessage(collection=table, id=message['old_val']['id'], fields=changed_fields)
+        changed = ChangedMessage(collection=table, id=message['old_val']['id'], fields=changed_fields, cleared=cleared)
 
         # meteor doesn't send the id back in the fields, but need to confirm this is how it should work in cases
         # where an id might change??
